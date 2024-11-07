@@ -1,49 +1,34 @@
-from flask import Flask, jsonify, request, render_template_string
 
-app = Flask(__name__)
 
-# A simple in-memory structure to store tasks
-tasks = []
+from flask import Flask,send_from_directory,render_template
+from flask_restful import Resource, Api
+from package.patient import Patients, Patient
+from package.doctor import Doctors, Doctor
+from package.appointment import Appointments, Appointment
+from package.common import Common
+import json
 
-@app.route('/', methods=['GET'])
-def home():
-    # Display existing tasks and a form to add a new task
-    html = '''
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Todo List</title>
-</head>
-<body>
-    <h1>Todo List</h1>
-    <form action="/add" method="POST">
-        <input type="text" name="task" placeholder="Enter a new task">
-        <input type="submit" value="Add Task">
-    </form>
-    <ul>
-        {% for task in tasks %}
-        <li>{{ task }} <a href="/delete/{{ loop.index0 }}">x</a></li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
-'''
-    return render_template_string(html, tasks=tasks)
 
-@app.route('/add', methods=['POST'])
-def add_task():
-    # Add a new task from the form data
-    task = request.form.get('task')
-    if task:
-        tasks.append(task)
-    return home()
+with open('config.json') as data_file:
+    config = json.load(data_file)
 
-@app.route('/delete/<int:index>', methods=['GET'])
-def delete_task(index):
-    # Delete a task based on its index
-    if index < len(tasks):
-        tasks.pop(index)
-    return home()
+app = Flask(__name__, static_url_path='')
+api = Api(app)
+
+api.add_resource(Patients, '/patient')
+api.add_resource(Patient, '/patient/<int:id>')
+api.add_resource(Doctors, '/doctor')
+api.add_resource(Doctor, '/doctor/<int:id>')
+api.add_resource(Appointments, '/appointment')
+api.add_resource(Appointment, '/appointment/<int:id>')
+api.add_resource(Common, '/common')
+
+# Routes
+
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
+
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True,host=config['host'],port=config['port'])
